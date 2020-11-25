@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="orchestrator-get-commons-catalog" doc:id="f5838ff2-a8bc-48be-8cfe-18e4c9d8f3cc" >
+		<logger level="INFO" doc:name="Logger" doc:id="689935ac-56af-4ce6-8298-6c12694c1b3d" message="#['\n'] ********** Inicia proceso Get ********** #['\n'] #[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="df2a2341-0cb6-4ffc-a1ca-d89766f95976">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	catalogName:payload.catalogName as String,
+	key_search: payload.key_search as String
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="Call to db-get-commons-catalog" doc:id="6d13d015-7adb-4efa-aa90-523050754f20" name="db-get-commons-catalog"/>
+		<ee:transform doc:name="Transform Message" doc:id="ff65e3aa-24ee-4afb-a038-4820f1cfb45f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="3783e83b-ad9b-4523-9682-953c1afa17ab" />
+		<logger level="INFO" doc:name="Logger" doc:id="7cafe11b-59c2-4dbc-a439-6ab5eccebb8f" message="#['\n'] ********** Resultado Get ********** #['\n']  #[payload]"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="d72b61c7-fc9a-4d48-a165-a51c4837e55e" type="EXPRESSION">
+				<ee:transform doc:name="Transform Message" doc:id="eb966410-5582-4107-a947-4d8cc5250574" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

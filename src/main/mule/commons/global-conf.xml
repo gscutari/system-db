@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway" xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="de0039a1-c90d-4181-a0de-343416d9b0bd" file="system-db-${env}.properties" />
+	<global-property doc:name="Global Property" doc:id="9cdca2db-77c7-464e-b7ab-55e164ac96f8" name="env" value="dev" />
+	<tls:context name="TLS_Context" doc:name="TLS Context" doc:id="363e689a-b174-4b7d-b48e-a6151ca30820" >
+		<tls:key-store type="${system.db.https.listener.key.store.type}" path="${system.db.https.listener.key.store.path}" keyPassword="${system.db.https.listener.key.store.key.password}" password="${system.db.https.listener.key.store.password}" />
+	</tls:context>
+	<api-gateway:autodiscovery apiId="${anypoint.platform.autodiscovery}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="2f84107b-6c7c-4876-9d75-07ef6472476f" flowRef="system-db-api-main" />
+</mule>

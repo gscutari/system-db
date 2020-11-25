@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="orchestrator-put-bi-stops" doc:id="b30fbd4f-46db-4aca-82fa-e8719a2e9a00" >
+		<logger level="INFO" doc:name="Logger" doc:id="fc43382f-9815-4c99-9cfb-619a12df7f6d" message="********** Inicia Proceso de Upsert Stops"/>
+		<flow-ref doc:name="Upsert" doc:id="145fa7e7-99eb-4c37-9381-79d4de6e6cd6" name="db-bi-stops" />
+		<ee:transform doc:name="Transform Message" doc:id="0b7d4104-2aaa-4a39-91ff-2dbd8650e6d9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"TXLResponse":{
+			"ResponseCode":0,
+			"ResponseDescription":"Success",
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9f190cf3-6921-4759-95f7-e0996626e949" type="ANY" >
+				<ee:transform doc:name="Transform Message" doc:id="cced1917-d70a-48bf-a38e-62ec1313ae6d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	"TXLResponse":{
+			"ResponseCode":1,
+			"ResponseDescription":error.description,
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

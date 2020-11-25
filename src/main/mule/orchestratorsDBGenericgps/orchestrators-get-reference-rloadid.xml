@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-get-reference-rloadid" doc:id="174453d3-4bb2-418e-86a5-afd79af0414f" >
+		<logger level="INFO" doc:name="Logger" doc:id="d6afc318-d727-40e9-a299-94e804f3b2e3" message="#['\n']********** El ReferenceType es RloadId ********** #['\n'] #[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="cea6becd-8545-47b9-bab5-55561274821e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="67e0b5d1-0346-4ea4-84cf-a0b62b658d9d" message="#['\n']********** solicitando informacion en la base  ********** #['\n']"/>
+		<flow-ref doc:name="Call to db-get-genericgps-reference-rloadid" doc:id="8cb1038f-ba93-4c7a-ad3e-2cbeeb55ecd5" name="db-get-genericgps-reference-rloadid"/>
+		<ee:transform doc:name="Transform Message" doc:id="1c2702c3-a1f7-4197-a8d9-14e4a933f24a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="fc8f5e30-8691-4f34-8cf8-43a8b08a1c1c" message="#['\n']********** Proceso get RloadId concluido  ********** #['\n'] #[payload]"/>
+	</sub-flow>
+</mule>

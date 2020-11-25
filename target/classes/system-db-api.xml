@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <http:listener-config name="system-db-api-httpListenerConfig">
+        <http:listener-connection host="${system.db.https.listener.host}" port="${system.db.https.listener.port}" protocol="HTTPS" tlsContext="TLS_Context" />
+    </http:listener-config>
+    <apikit:config name="system-db-api-config" api="system-db-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="system-db-api-main">
+        <http:listener config-ref="system-db-api-httpListenerConfig" path="${system.db.https.listener.path}">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="system-db-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="system-db-api-console">
+        <http:listener config-ref="system-db-api-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="system-db-api-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\commons\catalog:system-db-api-config">
+        <logger level="INFO" doc:name="Print logger" doc:id="ccaf7851-49e0-408e-8f44-24f06b429273" message="get:\commons\catalog:system-commons-catalog-api-config" />
+        <set-payload doc:name="Set Payload" doc:id="a9637fc5-faf7-434f-91ac-4b41e14bb443" value="#[attributes.queryParams]" />
+        <flow-ref doc:name="Call to orchestrator-get-commons-catalog" doc:id="9be36b36-6755-484b-a738-2e5d0cf054f4" name="orchestrator-get-commons-catalog" />
+    </flow>
+    <flow name="post:\commons\catalog\insert:system-db-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="14cd622e-af26-451f-a802-f1b2fbe4d625" message="post:\commons\catalog\insert:system-commons-catalog-api-config" />
+        <set-payload value="#[attributes.queryParams]" doc:name="Set Payload" doc:id="35cc422f-07f1-4604-8f39-72e054a76e06" />
+        <logger level="INFO" doc:name="Logger" doc:id="a34104f6-65ee-4d0b-abed-e92028870548" message="#[payload]" />
+        <flow-ref doc:name="Call to orchestrator-post-commons-catalog-insert" doc:id="fdeb3f59-f97a-42d8-8274-3ef565c10aa6" name="orchestrator-post-commons-catalog-insert" />
+    </flow>
+    <flow name="get:\logs\request:system-db-api-config">
+        <set-variable value="#[attributes.queryParams.id]" doc:name="Set Variable" doc:id="3c44355e-cda3-4053-8b4b-006c1ffc11fb" variableName="getid" />
+        <flow-ref doc:name="Call to orchestrators-get-logs" doc:id="6b9b031f-08ef-48de-9bcb-e8ff19813931" name="orchestrators-get-logs" />
+    </flow>
+    <flow name="post:\logs\insert:application\json:system-db-api-config">
+        <set-variable value="#[payload]" doc:name="Set Variable" doc:id="910ca796-e1a4-48ed-9949-6eb112fe377f" variableName="payload" />
+        <ee:transform doc:name="Transform Message" doc:id="b34d3ab4-1599-4184-9ef9-8920635c547f">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="source"><![CDATA[attributes.queryParams.source]]></ee:set-variable>
+                <ee:set-variable variableName="id"><![CDATA[attributes.queryParams.id]]></ee:set-variable>
+                <ee:set-variable variableName="date"><![CDATA[attributes.queryParams.date]]></ee:set-variable>
+                <ee:set-variable variableName="ref1"><![CDATA[attributes.queryParams.reference1]]></ee:set-variable>
+                <ee:set-variable variableName="ref2"><![CDATA[attributes.queryParams.reference2]]></ee:set-variable>
+                <ee:set-variable variableName="ref3"><![CDATA[attributes.queryParams.reference3]]></ee:set-variable>
+                <ee:set-variable variableName="message_type"><![CDATA[attributes.queryParams.message_type]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="Call to orchestrator-insert-logs" doc:id="1312a66c-7e90-4bdb-a0ea-2888064131ec" name="orchestrator-insert-logs" />
+    </flow>
+    <flow name="post:\sapactivity:system-db-api-config">
+        <set-variable value="#[attributes.queryParams.camino]" doc:name="Set Variable" doc:id="41bf5386-78ad-49df-a592-5b2ca04bfe77" variableName="camino" />
+        <flow-ref doc:name="Call to orchestrator-logs-sapactivity" doc:id="77bf60b5-74ca-476d-bd2a-4b5095870751" name="orchestrator-logs-sapactivity" />
+    </flow>
+    <flow name="put:\bi\load:application\json:system-db-api-config">
+        <flow-ref doc:name="Call to orchestrator put bi loads" doc:id="192e4053-ffc4-4400-b2da-40866ecc23dd" name="orchestrator-put-bi-loads" />
+    </flow>
+    <flow name="put:\bi\shipment:system-db-api-config">
+        <flow-ref doc:name="Call to orchestrator-put-bi-shipment" doc:id="49812c18-3bdb-4f2b-b9f3-d613ada108a6" name="orchestrator-put-bi-shipment" />
+    </flow>
+    <flow name="put:\bi\stop:system-db-api-config">
+        <flow-ref doc:name="Call to orchestrator-put-bi-stops" doc:id="16c564c9-9daa-4ef2-bc73-59d26710c44a" name="orchestrator-put-bi-stops" />
+    </flow>
+    <flow name="get:\db\genericgps\activeloads:system-db-api-config">
+        <flow-ref doc:name="Call to orchestrator-get-egoba" doc:id="afb1ed97-49e0-454d-a3cd-0086b4319fc9" name="orchestrator-get-egoba" />
+    </flow>
+    <flow name="get:\db\genericgps\activeloads\genericcarriers:system-db-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="2fa02cf6-4214-4a7f-9347-2125ce6da8ae" message="get:\db\genericgps\activeloads\genericcarriers:system-db-api-config" />
+        <logger level="INFO" doc:name="Logger" doc:id="5f6a03fe-afa2-4a01-ba10-6f20c6c88bc4" message="#['\n'] ********** Inicia proceso get active loads ********** #['\n']" />
+        <flow-ref doc:name="Call to orchestrators-get-activeloads-genericgps" doc:id="8c298f0f-4ee0-4a1d-8d6d-1a412c71bf7c" name="orchestrators-get-activeloads-genericgps" />
+    </flow>
+    <flow name="get:\db\genericgps\reference\rloadid:system-db-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="f2d123e7-d78f-4111-8647-716e9af1e2e2" message="get:\db\genericgps\reference\rloadid:system-db-api-config" />
+        <set-payload value="#[attributes.queryParams]" doc:name="queryParams" doc:id="61b90f28-41f4-44e5-9bb9-e67558d0b1f3" />
+        <logger level="INFO" doc:name="Logger" doc:id="bee020bb-2a5e-47ab-95e6-aa08d7ac2821" message="#['\n'] ********** Iniciaproceso get-reference-rloadId ********** #['\n']" />
+        <flow-ref doc:name="Call to orchestrators-get-reference-rloadid" doc:id="c312f65f-3395-4e5b-9cae-2d67baab9385" name="orchestrators-get-reference-rloadid" />
+    </flow>
+    <flow name="get:\db\genericgps\reference\trailernumber:system-db-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="125eb217-d5ff-480b-8ec4-2d2db2b2c3bb" message="get:\db\genericgps\reference\trailernumber:system-db-api-config" />
+        <set-payload value="#[attributes.queryParams]" doc:name="queryParams" doc:id="0f31b52d-4462-43c7-9b00-686a8180fdc1" />
+        <logger level="INFO" doc:name="Logger" doc:id="09708e29-d132-4502-ba25-2a2bb955ab2f" message="#['\n'] ********** Iniciaproceso get-reference-trailerNumber ********** #['\n']" />
+        <flow-ref doc:name="Call to orchestrators-get-reference-trailernumber" doc:id="a8584def-4e64-4371-85b6-a2911eee939f" name="orchestrators-get-reference-trailernumber" />
+    </flow>
+    <flow name="get:\db\genericgps\reference\trailerplates:system-db-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="f82efdd3-1354-444f-9528-269e8b201c5c" message="get:\db\genericgps\reference\trailerplates:system-db-api-config" />
+        <set-payload value="#[attributes.queryParams]" doc:name="queryParams" doc:id="87405130-dfc1-4eb0-801b-bab63eac00b6" />
+        <logger level="INFO" doc:name="Logger" doc:id="11803489-6145-42c6-b0a4-765154db0638" message="#['\n'] ********** Iniciaproceso get-reference-trailerPlates ********** #['\n']" />
+        <flow-ref doc:name="Call to orchestrators-get-reference-trailerplates" doc:id="81d19a7d-c59f-4552-98f6-270e2d21df30" name="orchestrators-get-reference-trailerplates" />
+    </flow>
+    <flow name="get:\db\genericgps\reference\trucknumber:system-db-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="fb79eecd-9330-4f36-8980-f8b586fd6481" message="get:\db\genericgps\reference\trucknumber:system-db-api-config" />
+        <set-payload value="#[attributes.queryParams]" doc:name="queryParams" doc:id="c1a9f552-ea1a-41b5-ad6a-64fc8cabd78f" />
+        <logger level="INFO" doc:name="Logger" doc:id="4532c509-daf6-47d9-863f-0e8a0a710bf2" message="#['\n'] ********** Iniciaproceso get-reference-truckNumber ********** #['\n']" />
+        <flow-ref doc:name="Call to orchestrators-get-reference-trucknumber" doc:id="3f232572-c3f1-4339-a761-4957ef76e013" name="orchestrators-get-reference-trucknumber" />
+    </flow>
+    <flow name="post:\db\genericgps\eventname\insert:system-db-api-config">
+        <ee:transform xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  message: "update successful"
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+    <flow name="post:\db\genericgps\eventname\update:system-db-api-config">
+        <logger level="INFO" doc:name="Logger" doc:id="98e0f2ba-b91f-4eff-b480-efc863993ba9" message="post:\db\genericgps\eventname\update:system-db-api-config" />
+        <flow-ref doc:name="Call to orchestrators-post-eventname-update-insert" doc:id="5ccbf75b-c903-4756-b38e-d4059ce28085" name="orchestrators-post-eventname-update-insert" />
+        <error-handler>
+            <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="36d9a531-0e70-425f-a883-51d6b514ba15" type="VALIDATION:BLANK_STRING">
+                <ee:transform doc:name="Transform Message" doc:id="9f26332d-54cb-408a-be59-607be715ff6d" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: error.description as String}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[400]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-continue>
+            <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9d69af88-292b-4749-826a-0f7c8f4a6d2f" type="DB:CONNECTIVITY, DB:QUERY_EXECUTION">
+                <ee:transform doc:name="Transform Message" doc:id="a4021744-c299-4eec-88fa-2d72eb7db144">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: error.description as String}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus"><![CDATA[500]]></ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-continue>
+        </error-handler>
+    </flow>
+    <flow name="get:\commons\catalog\email:system-db-api-config">
+        <set-payload value="#[attributes.queryParams]" doc:name="Set Payload" doc:id="ac3ca3f4-7740-4f19-97c5-70d67d344f56" />
+        <flow-ref doc:name="Call to db-get-commons-catalog-email" doc:id="16a79b85-e4ee-4708-899a-e8e26590c6e2" name="db-get-commons-catalog-email" />
+    </flow>
+</mule>

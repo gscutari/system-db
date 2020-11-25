@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-get-logs" doc:id="229a405a-517b-4cd4-b327-ffbc0dccefe2" >
+		<db:select doc:name="Select" doc:id="8fcfa0e4-6c5c-41c7-a638-845adfc10534" config-ref="Database_Config">
+			<db:sql ><![CDATA[${commons.logs.db.query.logs.get}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{id:vars.getid}]]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="704143dc-273b-4385-a336-85f0c598ddc4" />
+		<ee:transform doc:name="Transform Message" doc:id="1b5509ef-556d-46a6-8a7d-71c0b4e1767f">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload.message]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="1de65da5-9af4-467e-906c-2d64800f99fe" message="#[payload]"/>
+	</sub-flow>
+</mule>

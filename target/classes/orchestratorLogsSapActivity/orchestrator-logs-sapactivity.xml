@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<sub-flow name="orchestrator-logs-sapactivity" doc:id="821f6035-67fb-41e6-844a-a02fb591fe31" >
+		<logger level="INFO" doc:name="Logger" doc:id="81de28cc-6d9c-4efe-bcfb-de27ff422ded" message="**** Camino a seguir #[vars.camino]"/>
+		<choice doc:name="Choice" doc:id="0240adde-b42f-4c34-bbe8-3eadc5f512a2" >
+			<when expression='#[vars.camino == "orderincome"]'>
+				<db:insert doc:name="Insert" doc:id="0385124b-969e-4a6c-bded-8bdc95791b8c" config-ref="Database_Config">
+					<db:sql ><![CDATA[INSERT INTO provision_ingreso (shipmentId,systemLoadId,shipmentNumber,shipmentDescription,profitCenter,monto,numeroDocSap,statusSap,statusCommit) values (:shipmentId, :systemLoadId, :shipmentNumber, :shipmentDescription, :profitCenter, :monto, :numeroDocSap, :statusSap, :statusCommit)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{shipmentId:payload.shipmentId,systemLoadId:payload.systemLoadId,shipmentNumber:payload.shipmentNumber,shipmentDescription:payload.shipmentDescription,profitCenter:payload.profitCenter,monto:payload.monto,numeroDocSap:payload.numeroDocSap,statusSap:payload.statusSap,statusCommit:payload.statusCommit}]]]></db:input-parameters>
+				</db:insert>
+				<logger level="INFO" doc:name="Logger" doc:id="458abbe2-1d04-467d-96cc-bbd7b6c92c3d" message="************** Se inserto correcto Log Provision Ingreso"/>
+			</when>
+			<when expression='#[vars.camino == "purchaseorder"]'>
+				<db:insert doc:name="Insert" doc:id="30a8bef9-9296-4385-8603-5ca120f24211" config-ref="Database_Config" >
+					<db:sql ><![CDATA[INSERT INTO purchase_order (loadId,carrierDescription,profitCenter,monto,montoNegativo,total,noProvision,numeroDocSap,numeroDocMigo,statusSap,statusCommit) values (:loadId, :carrierDescription, :profitCenter, :monto, :montoNegativo, :total, :noProvision, :numeroDocSap, :numeroDocMigo, :statusSap, :statusCommit)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{loadId:payload.LoadId,carrierDescription:payload.carrierDescription,profitCenter:payload.profitCenter,monto:payload.monto,montoNegativo:payload.montoNegativo,total:payload.total,noProvision:payload.noProvision,numeroDocSap:payload.numeroDocSap,numeroDocMigo:payload.numeroDocMigo,statusSap:payload.statusSap,statusCommit:payload.statusCommit}]]]></db:input-parameters>
+				</db:insert>
+				<logger level="INFO" doc:name="Logger" doc:id="a52f448e-1473-4bc4-935f-adbefa862ba6" message="************** Se inserto correcto Log Purchase Order" />
+			</when>
+			<when expression='#[vars.camino == "salesorder"]'>
+				<db:insert doc:name="Insert" doc:id="d337794f-b06c-4b74-ad47-209596320263" config-ref="Database_Config" >
+					<db:sql ><![CDATA[INSERT INTO sales_order (shipmentId,profitCenter,monto,shipmentNumber,shipmentDescription,noProvision,numeroDocSap,statusSap,statusCommit) values (:shipmentId, :profitCenter, :monto, :shipmentNumber, :shipmentDescription, :noProvision, :numeroDocSap, :statusSap, :statusCommit)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{shipmentId:payload.shipmentId,profitCenter:payload.profitCenter,monto:payload.monto,shipmentNumber:payload.shipmentNumber,shipmentDescription:payload.shipmentDescription,noProvision:payload.noProvision,numeroDocSap:payload.numeroDocSap,statusSap:payload.statusSap,statusCommit:payload.statusCommit}]]]></db:input-parameters>
+				</db:insert>
+				<logger level="INFO" doc:name="Logger" doc:id="076ffec7-7c09-47c4-b58f-ae11bc621191" message="************** Se inserto correcto Log Sales Order" />
+			</when>
+			<when expression='#[vars.camino == "provisioncost"]'>
+				<db:insert doc:name="Insert" doc:id="b064fbf8-9282-47ac-8f1c-b77309e50134" config-ref="Database_Config" >
+					<db:sql ><![CDATA[INSERT INTO provision_costo (loadId,profitCenter,monto,numeroDocSap,statusSap,statusCommit) values (:loadId, :profitCenter, :monto, :numeroDocSap, :statusSap, :statusCommit)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{loadId:payload.loadId,profitCenter:payload.profitCenter,monto:payload.monto,numeroDocSap:payload.numeroDocSap,statusSap:payload.statusSap,statusCommit:payload.statusCommit}]]]></db:input-parameters>
+				</db:insert>
+				<logger level="INFO" doc:name="Logger" doc:id="ee402d04-f99a-4e9b-a43b-6f7c6c5cc59d" message="************** Se inserto correcto Log Provision Cost" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="5b523955-7304-4fae-97c2-b77c61de5197" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

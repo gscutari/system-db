@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="db-bi-loads" doc:id="5ec82eb4-e109-4196-ad73-1c1ec070df03" >
+		<db:insert doc:name="Insert or update Load" doc:id="053cfe70-7e04-4e27-83ca-33f785e52b76" config-ref="db-bi-config">
+			<db:sql ><![CDATA[${bi.loads.upsert}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+	</flow>
+	<flow name="db-bi-shipment" doc:id="9557e27d-08c8-4b44-8dda-bc517dbcaaf0" >
+		<db:insert doc:name="Insert or update Shipment" doc:id="ce5b116c-669d-4eee-a24f-138b7c80258d" config-ref="db-bi-config" >
+			<db:sql ><![CDATA[${bi.shipment.upsert}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+	</flow>
+	<flow name="db-bi-stops" doc:id="f732b491-570f-40ca-b413-d74c45516064" >
+		<db:insert doc:name="Insert or update Stops" doc:id="7dda4233-4c9a-4fef-ab1c-c6788136208b" config-ref="db-bi-config" >
+			<db:sql ><![CDATA[${bi.stops.upsert}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+	</flow>
+</mule>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<sub-flow name="orchestrator-get-egoba" doc:id="58080f34-ff45-4c2e-972b-def9fdcee3dc" >
+		<set-variable value="#[message.attributes.headers.truck]" doc:name="Set Variable" doc:id="d3d70eeb-ef67-425c-9525-f186499fc585" variableName="truckn"/>
+		<db:select doc:name="Select" doc:id="1594e533-cb66-4504-a575-8b6c3163222a" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.db.egoba.get}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{truckn:vars.truckn}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="de0b94b4-fedd-4983-9f27-af4bc5acd092" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload reduce
+{
+	loadId: payload.loadId,
+	vehiclePlates: payload.vehiclePlates,
+	truckNumber: payload.truckNumber
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="9b6d4068-2eed-46ab-afcc-b9a011ccf499" message="#['\n']************************* Saliendo de Base ************************ #['\n'] #[payload] #[typeOf(payload)]" />
+	</sub-flow>
+	<sub-flow name="orchestrators-get-egobaSub_Flow" doc:id="393f9cf1-2a47-4694-ada1-d17484a08185" >
+		<ee:transform doc:name="Transform Message" doc:id="0b079363-d93e-4af5-9f31-21ae59f77872">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="f69d5c2c-b061-4e81-965c-a8c62953315a">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload reduce
+{
+	loadId: payload.loadId,
+	vehiclePlates: payload.vehiclePlates default "",
+	truckNumber: payload.truckNumber default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+</mule>

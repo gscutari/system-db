@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<sub-flow name="db-post-genericgps-eventname-update-loadstopdelivered" doc:id="a41d2ad9-8a75-4cb8-9e84-4309b610ca02" >
+		<db:update doc:name="Update" doc:id="48312cfc-cac9-4358-a054-469b10410cfe" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.eventname.update.query.update.delivered}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:update>
+	</sub-flow>
+	<sub-flow name="db-post-genericgps-eventname-update-loadtendercancelled" doc:id="ddca7def-d6dd-4d18-b7e5-17367e9376cc">
+		<db:update doc:name="Update" doc:id="1cfaaa1c-ae93-4fb1-9e94-ac6d24b20f19" config-ref="Database_Config">
+			<db:sql><![CDATA[${db.genericgps.eventname.update.query.update.tender.cancelled}]]></db:sql>
+			<db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
+		</db:update>
+	</sub-flow>
+	<sub-flow name="db-gps-get-activeloads-genericgps" doc:id="7b687299-b95a-44fd-a893-8d05eca9610c" >
+		<db:select doc:name="Select" doc:id="8791be1d-e30a-4ca9-b4ee-59a69107ff30" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.activeloads.query.get}]]></db:sql>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="db-post-genericgps-eventname-update" doc:id="95ecc176-fcd7-4d2b-ab84-bfb2f8fa00b9" >
+		<db:update doc:name="Update" doc:id="3a39a780-557c-44eb-a1ad-8591a0b65cc9" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.eventname.update.query.update}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:update>
+	</sub-flow>
+	<sub-flow name="db-post-genericgps-eventname-insert" doc:id="f583ff19-7fda-4645-83a0-f58b4bafc7dd" >
+		<db:insert doc:name="Insert" doc:id="7bc758c8-c290-4df4-b69f-4ea6838416d3" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.eventname.update.query.insert}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+	</sub-flow>
+	<sub-flow name="db-genericgps-eventname-validator" doc:id="66a3c11f-2e76-4902-a6c1-b6782fa4273d" >
+		<db:select doc:name="validator" doc:id="e12b39cf-3f46-4d1f-a121-72ccee1f7271" target="recordcount" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.eventname.query.validator.select}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{loadId:payload.loadId}]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="db-get-genericgps-reference-rloadid" doc:id="2ca72dcc-b1ee-4827-a2e5-c16d9a505e3b" >
+		<db:select doc:name="rloadid" doc:id="869a8117-19f9-4d38-b917-2ea88168ebaa" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.reference.rloadid.query.get}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="db-get-genericgps-reference-trucknumber" doc:id="760eda70-b7aa-455c-8b43-8e969fbec7da" >
+		<db:select doc:name="trucknumber" doc:id="a0081212-aa8d-429d-b6fe-9c2f7fffe0b4" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.reference.trucknumber.query.get}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="db-get-genericgps-reference-trailernumber" doc:id="310a4234-806b-4d46-8f4e-1118bc9a1dea" >
+		<db:select doc:name="trailernumber" doc:id="898a338d-5ab7-48aa-abc9-d8ea9881e6d2" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.reference.trailernumber.query.get}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="db-get-genericgps-reference-trailerplates" doc:id="ec6429cb-e7c3-43d4-a0e1-68919dc52526" >
+		<db:select doc:name="trailerplates" doc:id="0a7f9173-5958-4ca9-892b-5fa7a67561aa" config-ref="Database_Config">
+			<db:sql ><![CDATA[${db.genericgps.reference.trailerplates.query.get}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+</mule>

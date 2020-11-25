@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="db-get-commons-catalog" doc:id="95ecc176-fcd7-4d2b-ab84-bfb2f8fa00b9" >
+		<db:select doc:name="valueSap" doc:id="bd959dd7-eb09-4d68-872b-30880e68f8c9" config-ref="Database_Config">
+			<db:sql ><![CDATA[${commons.catalog.db.query.value_result.get}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="db-post-commons-catalog-insert" doc:id="f583ff19-7fda-4645-83a0-f58b4bafc7dd" >
+		<db:insert doc:name="Insert" doc:id="3b3e36a0-f481-4c43-8b88-3da623db61e7" config-ref="Database_Config">
+			<db:sql ><![CDATA[${commons.catalog.db.query.insert}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+	</sub-flow>
+	<sub-flow name="db-validator-commons-catalog" doc:id="66a3c11f-2e76-4902-a6c1-b6782fa4273d" >
+		<db:select doc:name="validator" doc:id="e3b89c86-6183-4f76-a5d1-9768e22463ba" config-ref="Database_Config" target="recordcount">
+			<db:sql ><![CDATA[${commons.catalog.db.query.validator.select}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{key_search:payload.key_search}]]]></db:input-parameters>
+		</db:select>
+	</sub-flow>
+	<sub-flow name="db-get-commons-catalog-email" doc:id="2375ad9d-0351-4e1b-ac7d-553105896d8c" >
+		<logger level="INFO" doc:name="Logger" doc:id="4f2d94e2-8eac-44a5-9b2d-b38d9308222b" message="#[payload]"/>
+		<db:select doc:name="Select" doc:id="c3f57d1b-4042-4d04-a083-121a050460a4" config-ref="Database_Config">
+			<db:sql ><![CDATA[${commons.catalog.db.query.email}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{carrierCode:payload.carrierCode}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="ac63a8d3-c2f6-4a80-9f21-9cf535b398fd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	correo:payload.email[0]
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="e1d06566-4d30-4301-a6fc-2986fed1d457" message="#[payload]" />
+	</sub-flow>
+</mule>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<db:config name="db-bi-config" doc:name="Database Config" doc:id="a05e2826-290a-49f6-819b-f69d34fdafea" >
+		<db:my-sql-connection host="${db.bi.host}" port="${db.bi.port}" user="${db.bi.user}" password="${db.bi.password}" database="${db.bi.database}" />
+	</db:config>
+</mule>

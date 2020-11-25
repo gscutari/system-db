@@ -1,0 +1,236 @@
+#%RAML 1.0
+title: system-db-api
+description: system-db-genericgps - This api connects to the database to obtain information, create or update data from active loads. system-commons-logs-api - Commons logs requests-response.  system-commons-catalog-api - Commons catalog.  system-db-bi - Write in database all records will use in BI
+version: 1
+
+traits:
+  commons-badrequests: !include commons/bad-requests.raml
+  commons-security-headers: !include commons/security-headers.raml
+  commons-queryparams: !include commons/db-genericgps-queryparams.raml
+  commons-queryparams-insert: !include commons/commons-catalog-queryparams-insert.raml
+  commons-queryparams-catalogs: !include commons/commons-catalog-queryparams-catalog.raml
+
+/db:
+  /genericgps:
+    /reference:
+      /rloadid:
+        is: [commons-badrequests, commons-security-headers]
+        get:
+          description: This application obtains the active loads that are in transit by consulting the loadId
+          queryParameters:
+            loadId:
+              type: string
+              required: true
+              example: "6112"
+            status:
+              type: string
+              required: true
+              example: "LL_DINTRANS"
+          responses:
+            200:
+              body:
+                application/json:
+                  example: {"message":"get successful"}
+      /trucknumber:
+        is: [commons-badrequests, commons-security-headers]
+        get:
+          description: This application obtains the active loads that are in transit by consulting the trucknumber
+          queryParameters:
+            truckNumber:
+              type: string
+              required: true
+              example: "C/E818113"
+            status:
+              type: string
+              required: true
+              example: "LL_DINTRANS"
+          responses:
+            200:
+              body:
+                application/json:
+                  example: {"message":"get successful"}
+      /trailernumber:
+        is: [commons-badrequests, commons-security-headers]
+        get:
+          description: This application obtains the active loads that are in transit by consulting the trailernumber
+          queryParameters:
+            trailerNumber:
+              type: string
+              required: true
+              example: "C/E818113"
+            status:
+              type: string
+              required: true
+              example: "LL_DINTRANS"
+          responses:
+            200:
+              body:
+                application/json:
+                  example: {"message":"get successful"}
+      /trailerplates:
+        is: [commons-badrequests, commons-security-headers]
+        get:
+          description: This application obtains the active loads that are in transit by consulting the trailerplates
+          queryParameters:
+            trailerPlates:
+              type: string
+              required: true
+              example: "6112"
+            status:
+              type: string
+              required: true
+              example: "LL_DINTRANS"
+          responses:
+            200:
+              body:
+                application/json:
+                  example: {"message":"get successful"}
+    /eventname:
+      /update:
+        is: [commons-badrequests, commons-security-headers]
+        post:
+          description: This is used to insert or update the information of the active loads
+          responses:
+            200:
+              body:
+                application/json:
+                  example: {"message":"update successful"}
+      /insert:
+        is: [commons-badrequests, commons-security-headers]
+        post:
+          description: This is used to insert the information of the active loads
+          responses:
+            200:
+              body:
+                application/json:
+                  example: {"message":"update successful"}
+    /activeloads:
+      is: [commons-badrequests]
+      get:
+        description: This is used to get loadId for egoba
+        responses:
+          200:
+            body:
+              application/json:
+                example: {"message":"requests successful"}
+      /genericcarriers:
+        is: [commons-badrequests, commons-security-headers]
+        get:
+          description: This is used to get loadId for active loads
+          responses:
+            200:
+              body:
+                application/json:
+                  example: {"message":"requests successful"}
+/logs:
+  /request:
+    is: [commons-badrequests]
+    get:
+      description: This application gets all the logs
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                {"message":"ok"}
+  /insert:
+    is: [commons-badrequests]
+    post:
+      description: This application contains SAP logs
+      body:
+        application/json:
+      responses:
+        204:
+          description: No-Content Success Response
+/commons:
+  /catalog:
+    is: [commons-queryparams-catalogs, commons-badrequests]
+    get:
+      description: This api gets the value related to SAP
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                {message: "value EGB_234"}
+    /insert:
+      is: [commons-queryparams-insert, commons-badrequests]
+      post:
+        description: This api will insert the catalogs
+        responses:
+          204:
+            description: No-Content Success Response
+    /email:
+      is: [commons-badrequests]
+      get:
+        description: This api will search email  
+        responses:
+          200:
+            body:
+              application/json:
+                example:
+                  {message: "Success"}   
+/bi:
+  /load:
+    is:
+      [commons-badrequests, commons-security-headers]
+    put:
+      description: Update a record if exist if not exist inster 
+      body:
+        application/json:
+          example:
+             !include examples/request/loadUpsertRQ.json
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                {
+                  "TXLResponse":{
+		            	"ResponseCode":0,
+			            "ResponseDescription":"Reccord Update Correctly"		
+                                }
+                }
+  /shipment:
+    is:
+      [commons-badrequests, commons-security-headers]
+    put:
+      description: Update a record if exist if not exist inster 
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                {
+                  "TXLResponse":{
+		            	"ResponseCode":0,
+			            "ResponseDescription":"Reccord Update Correctly"		
+                                }
+                }
+  /stop:
+    is:
+      [commons-badrequests, commons-security-headers]
+    put:
+      description: Update a record if exist if not exist inster 
+      responses:
+        200:
+          body:
+            application/json:
+              example:
+                {
+                  "TXLResponse":{
+		            	"ResponseCode":0,
+			            "ResponseDescription":"Reccord Update Correctly"		
+                                }
+                }
+/sapactivity:
+  is: [commons-badrequests]
+  post:
+    description: This application will save in a table the sap activity for status validation.
+    responses:
+      200:
+        body:
+          application/json:
+            example:
+              {"message":"ok"}
+

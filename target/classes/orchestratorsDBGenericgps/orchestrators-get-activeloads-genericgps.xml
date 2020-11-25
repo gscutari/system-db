@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-get-activeloads-genericgps" doc:id="580104f7-0e51-45d3-bae6-3bc14664bd6c" >
+		<logger level="INFO" doc:name="Logger" doc:id="9aa1ffb0-d017-43ee-9130-46710922ed16" message="#['\n'] ********** Obteniendo informacion de la base de datos  ********** #['\n'] #[payload]"/>
+		<flow-ref doc:name="Call to db-gps-get-activeloads-genericgps" doc:id="7552cf29-64b8-4498-86ea-fbe3867acebe" name="db-gps-get-activeloads-genericgps"/>
+		<ee:transform doc:name="Transform Message" doc:id="af93c8df-fd1b-41e7-b19b-c106547bdf36" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="ff8c558f-7d81-4dd8-907c-a123739ca461" message="#['\n'] ********** Saliendo de base de datos ********** #['\n'] #[payload] #[typeOf(payload)]" />
+	</sub-flow>
+</mule>

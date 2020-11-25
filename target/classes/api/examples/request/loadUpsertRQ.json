@@ -1,0 +1,23 @@
+{
+   "Load": {
+                        "SystemLoadID": "5795",
+                        "CurrencyCode": "MXN",
+                        "SystemCalculatedAmount": "4768.8",
+                        "PreconsolidatedAmount": "0",
+                        "CurrentLoadOperationalStatusEnumVal": "S_COMPLETED",
+                        "UpdatedDateTime": "2020-09-17T19:48:14",
+                        "LoadStartDateTime": "2020-09-21T06:00:00",
+                        "LoadEndDateTime": "2020-09-22T14:36:00",
+                        "EquipmentTypeCode": "GR_40",
+                        "CarrierCode": "MXS0048",
+                        "CreatedByUserCode": "AGORA_JG",
+                        "CustomerName": "TRANSPORTES DE CARGA GRUPO MYM SA DE CV",
+                        "CommodityCode": "MAIZ_S",
+                        "FirstShippingLocationCode": "003_0540",
+                        "FirstShippingLocationDescription": "LA JOYA, POANAS, DURANGO",
+                        "LastShippingLocationCode": "D003",
+                        "LastShippingLocationDescription": "ALMACEN INAGRO - SAN LUIS POTOSI",
+                        "DisplayStatusEnumVal": "DSTS_LL_D_POD",
+                        "SystemShipmentID": "7689"
+                    }
+}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrators-get-reference-trailernumber" doc:id="887eefcb-c5f9-49f0-816c-02aa253a8a37" >
+		<logger level="INFO" doc:name="Logger" doc:id="65bc18b7-b1b5-48fc-9166-c773969a4b20" message="#['\n']********** El ReferenceType es trailerNumber ********** #['\n'] #[payload]" />
+		<ee:transform doc:name="Transform Message" doc:id="352a09f7-968d-4240-8c3e-16198ef131d2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="9aa579fd-a972-4b96-999e-e8d0b563b5ef" message="#['\n']********** solicitando informacion en la base  ********** #['\n']" />
+		<flow-ref doc:name="Call to db-get-genericgps-reference-trailernumber" doc:id="889c2b16-c0d2-41e4-b455-600c759ef458" name="db-get-genericgps-reference-trailernumber" />
+		<ee:transform doc:name="Transform Message" doc:id="b9d2da23-e2fb-42f5-b963-de0fb8f37f29" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="d6a2dfbe-2815-41ea-8fd8-958675c67558" message="#['\n']********** Proceso get trailerNumber concluido  ********** #['\n'] #[payload]" />
+	</sub-flow>
+</mule>

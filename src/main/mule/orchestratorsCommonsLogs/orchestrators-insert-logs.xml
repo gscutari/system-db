@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrator-insert-logs" doc:id="ce74eee3-a82e-4bb1-9dce-df66b9309e39" >
+		<ee:transform doc:name="Transform Message" doc:id="c32dcf31-55a9-433d-b42e-26ebcc426692" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var data = vars.payload
+---
+write(data,"application/json")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="ae609a47-4dd9-46b8-8ab5-b3740dbc463f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+fun formatdate(d: DateTime) = d as String {
+	format: "y-MM-dd"}
+---
+{
+	source: vars.source,
+	id: vars.id,
+	reference1: vars.ref1,
+	reference2: vars.ref2,
+	reference3: vars.ref3,
+	message_type: vars.message_type,
+	message: payload,
+	date_message: formatdate(now()>>"America/Mexico_City")
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<db:insert doc:name="Insert" doc:id="330f934b-0a96-498e-a72a-4b92a01ac970" config-ref="Database_Config" >
+			<db:sql ><![CDATA[${db.query.insert.logs}]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{source:payload.source,id:payload.id,message_type:payload.message_type,reference1:payload.reference1, reference2:payload.reference2, reference3:payload.reference3, message:payload.message,date:payload.date_message}]]]></db:input-parameters>
+		</db:insert>
+	</sub-flow>
+</mule>

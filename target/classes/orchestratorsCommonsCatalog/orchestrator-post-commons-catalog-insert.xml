@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="orchestrator-post-commons-catalog-insert" doc:id="00fd912b-3253-431b-9e5f-61f558227ac0" >
+		<logger level="INFO" doc:name="Logger" doc:id="51c3c76f-f04c-418c-adfa-fc857138fb84" message="#['\n'] ********** Inicia proceso Insert ********** #['\n'] #[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="12b807db-0622-4bb1-a350-db9eb3ef9708" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	systemCat:payload.systemCat as String,
+	catalogName:payload.catalogName as String,
+	key_search: payload.key_search as String,
+	value_result: payload.value_result as String
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<flow-ref doc:name="db-validator-commons-catalog" doc:id="6482031f-8940-4c4a-ae85-7a96da681a94" name="db-validator-commons-catalog"/>
+		<choice doc:name="Choice" doc:id="f725b8ff-c450-47ef-b319-273cec6ed40b" >
+			<when expression="#[vars.recordcount.RECORDCOUNT[0]==1]">
+				<logger level="INFO" doc:name="Logger" doc:id="889ad998-bfea-42a9-98e0-74b013eac28e" message="#['\n'] ********** El keyValue ya existe en la base: #[payload.keyTms] ********** #['\n']" />
+				<raise-error doc:name="Raise error" doc:id="c893d37d-2174-4244-b5af-b6fda20845da" type="DUPLICATE_VALUE:DUPLICATE_VALUE" description="El keyValue ya existe en la base"/>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="Call to db-post-commons-catalog-insert" doc:id="b3d74833-e201-48ec-a403-96858cc05ab9" name="db-post-commons-catalog-insert" />
+				<set-payload value="Insert Successful" doc:name="Set Payload" doc:id="d62e8f96-1998-47ee-b414-91b3b0021d9e" />
+				<logger level="INFO" doc:name="Logger" doc:id="0fdca9ad-775e-4878-a3c8-846d2b24f84d" message="#['\n'] ********** Resultado Insert ********** #['\n'] #[payload]" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

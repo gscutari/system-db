@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:spring="http://www.mulesoft.org/schema/mule/spring"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="5def5ef3-cbf5-4192-8600-08fb1c61ad9c" />
+	<sub-flow name="orchestrators-post-eventname-update-insert" doc:id="b19543fc-8bec-4b00-97eb-d09eeda13f05" >
+		<logger level="INFO" doc:name="Logger" doc:id="df280de4-b50a-4bbf-b3bc-a40e4bbe6209" message="#['\n']********** Validando existencia de LoadId #[payload.loadId] ********** #['\n']"/>
+		<validation:is-not-blank-string doc:name="Is not blank string" doc:id="05e36dd5-c167-4b15-a1cc-9203a955a9fd" config-ref="Validation_Config" value="#[payload.loadId]" message="El campo loadId es requerido."/>
+		<flow-ref doc:name="Call to db-genericgps-eventname-validator" doc:id="590f84a6-e36d-47b2-9c36-a3bda282c1fe" name="db-genericgps-eventname-validator"/>
+		<choice doc:name="Choice" doc:id="fafaa144-8a29-4719-ab3c-497d05c29729" >
+			<when expression='#[vars.recordcount.RECORDCOUNT[0]==1  and payload.eventName ==  "LoadStopConfirmed"]'>
+				<logger level="INFO" doc:name="LoadStopConfirmed" doc:id="3e2f6d6f-eeac-46e5-803e-0a8923ffad45" message="#['\n']********** El LoadId  #[payload.loadId]  ya existe, inicia proceso Update **********#['\n']"/>
+				<flow-ref doc:name="Call to db-post-genericgps-eventname-update" doc:id="d9a085fe-9f90-4a25-a085-8e7865744837" name="db-post-genericgps-eventname-update"/>
+				<set-payload value="Update Successful" doc:name="Set Payload" doc:id="4de38f88-73ff-47fb-a618-c4f4fb51d208" />
+				<logger level="INFO" doc:name="Logger" doc:id="01ad8c21-8bb1-4367-ad82-7e22f9c83eda" message="#['\n']********** Proceso DB  concluido **********#['\n'] #[payload]" />
+			</when>
+			<when expression='#[vars.recordcount.RECORDCOUNT[0]==1 and payload.eventName ==  "LoadTenderAccepted"]'>
+				<logger level="INFO" doc:name="LoadTenderAccepted" doc:id="044fc33c-2696-45a8-87b2-124a972c9abc" message="#['\n']********** El LoadId  #[payload.loadId]  ya existe, inicia proceso Update **********#['\n']"/>
+				<flow-ref doc:name="Call to db-post-genericgps-eventname-insert" doc:id="5cb1d9da-b66f-4148-8387-e4e56b28cbe3" name="db-post-genericgps-eventname-insert" />
+				<set-payload value="Update Successful" doc:name="Set Payload" doc:id="5ca5512b-ec9c-4249-ab31-5e59840ef317" />
+				<logger level="INFO" doc:name="Logger" doc:id="959cec10-ea89-482c-bfd9-d3ebb35c671c" message="#['\n']********** Proceso DB  concluido **********#['\n'] #[payload]" />
+			</when>
+			<when expression='#[vars.recordcount.RECORDCOUNT[0]==1 and payload.eventName ==  "LoadStopDelivered"]'>
+				<logger level="INFO" doc:name="LoadStopDelivered" doc:id="e66ec767-1838-4c4e-897b-d8eefd7d74c5" message="#['\n']********** El LoadId  #[payload.loadId]  ya existe, inicia proceso Update **********#['\n']" />
+				<flow-ref doc:name="Call to db-post-genericgps-eventname-update-loadstopdelivered" doc:id="224d4cdf-8188-433c-a8fa-d0ee58d2d980" name="db-post-genericgps-eventname-update-loadstopdelivered" />
+				<set-payload value="Update Successful" doc:name="Set Payload" doc:id="ab34df4a-3212-4417-a83b-9a4312d79894" />
+				<logger level="INFO" doc:name="Logger" doc:id="38d29243-a1a9-4918-9ab3-140007b27e28" message="#['\n']********** Proceso DB  concluido **********#['\n'] #[payload]" />
+			</when>
+			<when expression='#[vars.recordcount.RECORDCOUNT[0]==1 and payload.eventName ==  "LoadTenderCancelled"]'>
+				<logger level="INFO" doc:name="LoadTenderCancelled" doc:id="71f0330f-584b-470d-89a9-92388bd2871a" message="#['\n']********** El LoadId  #[payload.loadId]  ya existe, inicia proceso Update **********#['\n']" />
+				<flow-ref doc:name="Call to db-post-genericgps-eventname-update-loadtendercancelled" doc:id="1641ffd3-0f0d-4f41-967d-7b05cb74e3e2" name="db-post-genericgps-eventname-update-loadtendercancelled" />
+				<set-payload value="Update Successful" doc:name="Set Payload" doc:id="ae25d052-400a-4f14-b3e1-4b9eac2b36b0" />
+				<logger level="INFO" doc:name="Logger" doc:id="87f58854-bb0a-4c5d-84b0-a79bcdbe114a" message="#['\n']********** Proceso DB  concluido **********#['\n'] #[payload]" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Insert" doc:id="589e4ac4-7b3c-4ffe-89b6-231707ec7748" message="#['\n']********** El LoadId  #[payload.loadId]  no existe, inicia proceso Insert **********#['\n']"/>
+				<flow-ref doc:name="Call to db-post-genericgps-eventname-insert" doc:id="46bf62e5-4b92-4955-98ad-d7aa7593c955" name="db-post-genericgps-eventname-insert"/>
+				<set-payload value="Insert Successful" doc:name="Set Payload" doc:id="e3caa394-1377-4733-b291-470a5a3b75bd" />
+				<logger level="INFO" doc:name="Logger" doc:id="fb57e9f3-4ac8-4041-b758-75d93a926615" message="#['\n']********** Proceso DB  concluido **********#['\n'] #[payload]" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>
