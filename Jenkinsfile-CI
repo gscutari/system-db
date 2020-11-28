@@ -42,12 +42,10 @@ pipeline {
             steps {
                 script {
                     echo "Starting Deploy Snapshot Artifact..."
-                    {
                         //gets the settings.xml file from Managed files where the id of the file is f390501c-7b4a-466f-b563-055e0da4a47e
                         configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
                             sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy'
                         }
-                    }
                 echo "Artifact Deployed: ${currentBuild.currentResult}"
                 }
             }
