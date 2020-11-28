@@ -1,0 +1,145 @@
+properties([pipelineTriggers([githubPush()])])
+
+pipeline {
+    agent any
+    environment {
+        BUILD_VERSION = "${currentBuild.number}.0.0"
+        //gets access token from Anypoint Platform (to deploy the app to Cloudhub)
+        ACCESS_TOKEN = sh label: 'get_token', returnStdout: true, script: 'curl --location --request POST \'https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token\' --header \'Content-Type: application/json\' --data-raw \'{"client_id" : "7b647938523d48c4b0d0c53ce740fba0", "client_secret" : "977A151534FF4C83b1014dec4CFc0c2B", "grant_type" : "client_credentials"}\' | sed -n \'s|.*"access_token":"\\([^"]*\\)".*|\\1|p\''
+    }
+
+    tools {
+        maven 'M3' //defines maven tool (configured in "Global Configuration Tool -> Maven -> Maven Installations")
+    }
+
+    stages{
+        stage('Build and Test') {
+            steps {
+                script{
+                    releaseVersion = readMavenPom().getVersion()
+                    if(!releaseVersion.endsWith('-SNAPSHOT')){
+                        throw new Exception("Version does not correspond to SNAPSHOT, please add the -SNAPSHOT suffix in the version")
+                    }
+                    echo "Starting Build and Test..."
+                    //gets the settings.xml file from Managed files where the id of the file is f390501c-7b4a-466f-b563-055e0da4a47e
+                    configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                        sh "mvn -s $MAVEN_SETTINGS_XML -Dmaven.test.failure.ignore clean verify"
+                    }
+                    echo "Build and Test: ${currentBuild.currentResult}"
+                }
+            }
+            post {
+                success {
+                    echo "...Build and Test Succeeded"
+                }
+                unsuccessful {
+                    echo "...Build and Test Failed"
+                }
+            }
+        }
+
+        stage('Deploy Snapshot to Artifactory') {
+            steps {
+                script {
+                    echo "Starting Deploy Snapshot Artifact..."
+                    {
+                        //gets the settings.xml file from Managed files where the id of the file is f390501c-7b4a-466f-b563-055e0da4a47e
+                        configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                            sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy'
+                        }
+                    }
+                echo "Artifact Deployed: ${currentBuild.currentResult}"
+                }
+            }
+            post {
+                success {
+                    echo "...Deploy Artifact Succeeded for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+                unsuccessful {
+                    echo "...Deploy Artifact Failed for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+
+        stage('Deploy to Cloudhub dev environment') {
+            steps {
+                script {
+                    echo "Starting Cloudhub dev environment"
+
+                    applicationName = readMavenPom().getArtifactId() + '-dev'
+                    echo "applicationName=${applicationName}"
+
+                    sshagent(['gsmuleacm-git']) {//this is required to use the public and secred key of the credentiales defined by id gsmuleacm-git
+                        sh "git checkout develop"
+                        sh "git pull"
+                    }
+
+                    props = readProperties(file: 'deploy-dev.properties') //retrieves the properties from the deploy-dev.properties file stored in the repo
+
+                    anypointMuleVersion = props['anypoint.mule.version']
+                    anypointMuleEnvironment = props['anypoint.mule.environment']
+                    businessGroupId = props['anypoint.mule.businessGroupId']
+                    persistentQueues = props['cloudhub.persistentQueues']
+                    cloudhubEnv = props['anypoint.mule.environment']
+                    cloudhubRegion = props['cloudhub.region']
+                    cloudhubWorkerType = props['cloudhub.workerType']
+                    cloudhubWorkers = props['cloudhub.workers']
+
+                    echo "anypointMuleVersion=${anypointMuleVersion}"
+                    echo "anypointMuleEnvironment=${anypointMuleEnvironment}"
+                    echo "businessGroupId=${businessGroupId}"
+                    echo "persistentQueues=${persistentQueues}"
+                    echo "cloudhubEnv=${cloudhubEnv}"
+                    echo "cloudhubRegion=${cloudhubRegion}"
+                    echo "cloudhubWorkerType=${cloudhubWorkerType}"
+                    echo "cloudhubWorkers=${cloudhubWorkers}"
+
+                    echo "Deploy to Development: ${currentBuild.currentResult}"
+
+                    configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                            // Run the maven build
+                            sh """ mvn clean package deploy -DmuleDeploy -U --batch-mode -s $MAVEN_SETTINGS_XML \
+                            -Danypoint.platform.config.analytics.agent.enabled=true \
+                            -Dapp.runtime=${anypointMuleVersion}  \
+                            -DauthToken=${env.ACCESS_TOKEN} \
+                            -Dcloudhub.application.name=${applicationName} \
+                            -Denvironment=${anypointMuleEnvironment} \
+                            -Dbusiness.group.id=${businessGroupId} \
+                            -Dcloudhub.region=${cloudhubRegion} \
+                            -Dcloudhub.workerType=${cloudhubWorkerType} \
+                            -Dcloudhub.persistentQueues=${persistentQueues} \
+                            -Dcloudhub.objectStoreV2=true \
+                            -Dkafka.password=${kafka_password} \
+                            -DattachMuleSources=true \
+                            -Dcloudhub.workers=${cloudhubWorkers} """
+                        }
+                   
+                }
+
+
+            }
+            post {
+                success {
+                    echo "...Deploy to Development Succeeded for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+                unsuccessful {
+                    echo "...Deploy to Development Failed for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+    }
+   post {
+       success {
+           echo "All Good: ${env.BUILD_VERSION}"
+       }
+       unsuccessful {
+           echo "Not So Good: ${env.BUILD_VERSION}"
+       }
+       always {
+           echo "Pipeline result: ${currentBuild.result}"
+           echo "Pipeline currentResult: ${currentBuild.currentResult}"
+           cleanWs()
+       }
+   }
+
+}
