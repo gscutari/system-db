@@ -174,23 +174,18 @@
         </pluginRepository>
     </pluginRepositories>
 <distributionManagement>
-		<repository>
-			<id>mule-nexus</id>
-			<name>Nexus Repo</name>
-			<url>http://localhost:9081/repository/maven-releases/</url>
-			<layout>default</layout>
-		</repository>
-        <repository>
+	<snapshotRepository>
 			<id>mule-nexus-snapshots</id>
 			<name>Nexus Snapshots</name>
 			<url>http://localhost:9081/repository/maven-snapshots/</url>
 			<layout>default</layout>
-		</repository>
+		</snapshotRepository>
         <repository>
 			<id>mule-nexus-rc</id>
 			<name>nexus releases candidates</name>
 			<url>http://localhost:9081/repository/maven-releases/</url>
 			<layout>default</layout>
 		</repository>
+	</distributionManagement>
 	</distributionManagement>
 </project>
