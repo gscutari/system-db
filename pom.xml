@@ -30,6 +30,24 @@
 				<version>${mule.maven.plugin.version}</version>
 				<extensions>true</extensions>
 				<configuration>
+                <cloudHubDeployment>
+						<uri>https://anypoint.mulesoft.com</uri>
+						<muleVersion>${app.runtime}</muleVersion>
+						<authToken>${authToken}</authToken>
+						<applicationName>${cloudhub.application.name}</applicationName>
+						<environment>${environment}</environment>
+						<businessGroupId>${business.group.id}</businessGroupId>
+						<workers>${cloudhub.workers}</workers>
+						<objectStoreV2>true</objectStoreV2>
+						<workerType>${cloudhub.workerType}</workerType>
+						<artifact>${artifact}</artifact>
+						<properties>
+							<anypoint.platform.client_id>${anypoint.platform.client.id}</anypoint.platform.client_id>
+							<anypoint.platform.client_secret>${anypoint.platform.client.secret}</anypoint.platform.client_secret>
+							<mule.env>${environment}</mule.env>
+						</properties>
+					</cloudHubDeployment>
+					<classifier>mule-application</classifier>
 				<sharedLibraries>
                         <sharedLibrary>
                             <groupId>mysql</groupId>
@@ -39,6 +57,29 @@
                 <classifier>mule-application</classifier>
                 </configuration>
 			</plugin>
+            <plugin>
+                <groupId>com.mulesoft.munit.tools</groupId>
+                <artifactId>munit-maven-plugin</artifactId>
+                <version>${munit.version}</version>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                            <goal>coverage-report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <coverage>
+                        <runCoverage>true</runCoverage>
+                        <formats>
+                            <format>html</format>
+                        </formats>
+                    </coverage>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 
@@ -93,6 +134,33 @@
             <url>https://repository.mulesoft.org/releases/</url>
             <layout>default</layout>
         </repository>
+        <repository>
+			<id>MuleRepository</id>
+			<name>MuleRepository</name>
+			<url>https://repository.mulesoft.org/nexus-ee/content/repositories/releases-ee/</url>
+			<layout>default</layout>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+        <repository>
+			<id>mule-nexus</id>
+			<name>Nexus Repo</name>
+			<url>http://localhost:9081/repository/maven-releases/</url>
+		</repository>
+        <repository>
+			<id>mule-nexus-snapshots</id>
+			<name>Nexus Snapshots</name>
+			<url>http://localhost:9081/repository/maven-snapshots/</url>
+		</repository>
+        <repository>
+			<id>mule-nexus-rc</id>
+			<name>nexus releases candidates</name>
+			<url>http://localhost:9081/repository/maven-releases/</url>
+		</repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
@@ -105,5 +173,24 @@
             </snapshots>
         </pluginRepository>
     </pluginRepositories>
-
+<distributionManagement>
+		<repository>
+			<id>mule-nexus</id>
+			<name>Nexus Repo</name>
+			<url>http://localhost:9081/repository/maven-releases/</url>
+			<layout>default</layout>
+		</repository>
+        <repository>
+			<id>mule-nexus-snapshots</id>
+			<name>Nexus Snapshots</name>
+			<url>http://localhost:9081/repository/maven-snapshots/</url>
+			<layout>default</layout>
+		</repository>
+        <repository>
+			<id>mule-nexus-rc</id>
+			<name>nexus releases candidates</name>
+			<url>http://localhost:9081/repository/maven-releases/</url>
+			<layout>default</layout>
+		</repository>
+	</distributionManagement>
 </project>
