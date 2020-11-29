@@ -68,7 +68,7 @@ pipeline {
                     echo "applicationName=${applicationName}"
 
                     sshagent(['gsmuleacm-git']) {//this is required to use the public and secred key of the credentiales defined by id gsmuleacm-git
-                        sh "git checkout develop"
+                        sh "git checkout main"
                         sh "git pull"
                     }
 
@@ -107,7 +107,6 @@ pipeline {
                             -Dcloudhub.workerType=${cloudhubWorkerType} \
                             -Dcloudhub.persistentQueues=${persistentQueues} \
                             -Dcloudhub.objectStoreV2=true \
-                            -Dkafka.password=${kafka_password} \
                             -DattachMuleSources=true \
                             -Dcloudhub.workers=${cloudhubWorkers} """
                         }
