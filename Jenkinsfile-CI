@@ -67,10 +67,11 @@ pipeline {
                     applicationName = readMavenPom().getArtifactId() + '-dev'
                     echo "applicationName=${applicationName}"
 
-                    sshagent(['gsmuleacm-git']) {//this is required to use the public and secred key of the credentiales defined by id gsmuleacm-git
+                    //sshagent(['gsmuleacm-git']) {//this is required to use the public and secred key of the credentiales defined by id gsmuleacm-git
+                    //sshagent(['gsmuleacm-git']) {//this is required to use the public and secred key of the credentiales defined by id gsmuleacm-git
                         sh "git checkout main"
                         sh "git pull"
-                    }
+                    //}
 
                     props = readProperties(file: 'deploy-dev.properties') //retrieves the properties from the deploy-dev.properties file stored in the repo
 
