@@ -35,7 +35,7 @@
 						<uri>https://anypoint.mulesoft.com</uri>
 						<muleVersion>${app.runtime}</muleVersion>
 						<authToken>${authToken}</authToken>
-						<deploymentTimeout>1000000</deploymnentTimeout>
+						<deploymentTimeout>1000000</deploymentTimeout>
 						<applicationName>${cloudhub.application.name}</applicationName>
 						<environment>${environment}</environment>
 						<businessGroupId>${business.group.id}</businessGroupId>
