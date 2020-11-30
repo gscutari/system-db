@@ -109,7 +109,7 @@ pipeline {
                             -Dcloudhub.persistentQueues=${persistentQueues} \
                             -Dcloudhub.objectStoreV2=true \
                             -DattachMuleSources=false \
-                            -Denv=dev
+                            -Denv=dev \
                             -Dcloudhub.workers=${cloudhubWorkers} """
                         }
                    
