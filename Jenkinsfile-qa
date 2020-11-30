@@ -81,8 +81,8 @@ pipeline {
                     //sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
                     //sh "git config --local credential.helper store --file=~/.git-credentials"
                     
-                    sh "git config --global user.email \"gsacm@gmail.com"\"
-                    sh "git config --global user.name \"muleuser-gs"\"
+                    sh "git config --global user.email \"gsacm@gmail.com\""
+                    sh "git config --global user.name \"muleuser-gs\""
                     sh "git add pom.xml"
                    
 
