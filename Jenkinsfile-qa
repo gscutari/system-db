@@ -36,9 +36,7 @@ pipeline {
         stage('Push Release Tag') {
             steps {
                 script {
-                    git branch: 'master',
-                        credentialsId: 'muleuser-gs',
-                        url: 'https://github.com/gscutari/system-db.git'
+                  
                     //remove -SNAPSHOT suffix, this is necessary when the code is being mergec from develop branch
                     releaseVersion = readMavenPom().getVersion()
                     releaseVersion = releaseVersion.split('-')[0];
@@ -83,8 +81,8 @@ pipeline {
                     //sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
                     //sh "git config --local credential.helper store --file=~/.git-credentials"
                     
-                    //sh "git config --global user.email "gsacm@gmail.com""
-                    //sh "git config --global user.name "muleuser-gs""
+                    sh "git config --global user.email \"gsacm@gmail.com"\"
+                    sh "git config --global user.name \"muleuser-gs"\"
                     sh "git add pom.xml"
                    
 
