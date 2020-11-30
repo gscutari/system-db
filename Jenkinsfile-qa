@@ -83,7 +83,7 @@ pipeline {
                     //sh "git config --global user.email \"gsmuleacm@gmail.com\""
                     //sh "git config --global user.name \"muleuser-gs\""
                     
-                    sh "ssh -vT git@github.com"
+                    
                     sh "git add pom.xml"
                    
 
