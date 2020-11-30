@@ -103,7 +103,7 @@ pipeline {
                     echo "Starting Deploy Release Candidate Artifact..."
                     configFileProvider([configFile(fileId: '0f942a8d-e860-49ec-ba5d-d98cf9cb2b6f', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
                         //deploys to -qa directory, specified by the altReleaseDeploymentRepository argument
-                        sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy -DaltReleaseDeploymentRepository=mule-nexus-rc
+                        sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy -DaltReleaseDeploymentRepository=mule-nexus-rc'
                     }
                     echo "Artifact Deployed: ${currentBuild.currentResult}"
                 }
