@@ -76,9 +76,9 @@ pipeline {
                     
                     sh "mvn versions:set -DnewVersion=${releaseVersion}-RC-${buildNum}"//sets new version in pom.xml
                     
-                    withCredentials([usernamePassword(credentialsId: 'gsmuleacm-git', passwordVariable: 'adminPass', usernameVariable: 'adminUser')]) {
-                    sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
-                    sh "git config --local credential.helper store --file=~/.git-credentials"
+                    //withCredentials([usernamePassword(credentialsId: 'gsmuleacm-git', passwordVariable: 'adminPass', usernameVariable: 'adminUser')]) {
+                    //sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
+                    //sh "git config --local credential.helper store --file=~/.git-credentials"
                     
                     //sh "git config --global user.email "gsacm@gmail.com""
                     //sh "git config --global user.name "muleuser-gs""
@@ -98,7 +98,7 @@ pipeline {
                     //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
                        
                      sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
-                    }
+                    //}
                     applicationName = readMavenPom().getArtifactId() + '-qa'
                 }
             }
