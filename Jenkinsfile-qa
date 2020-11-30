@@ -1,0 +1,198 @@
+//building this with the hook is deactivated now to avoid auto-building this when pushing
+//changes to the release branch from the Jenkins job
+//properties([pipelineTriggers([githubPush()])])
+
+pipeline {
+    agent any
+    environment {
+        BUILD_VERSION = "${currentBuild.number}"
+        //gets access token from Anypoint Platform (to deploy the app to Cloudhub)
+       ACCESS_TOKEN = sh label: 'get_token', returnStdout: true, script: 'curl --location --request POST \'https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token\' --header \'Content-Type: application/json\' --data-raw \'{"client_id" : "7b647938523d48c4b0d0c53ce740fba0", "client_secret" : "977A151534FF4C83b1014dec4CFc0c2B", "grant_type" : "client_credentials"}\' | sed -n \'s|.*"access_token":"\\([^"]*\\)".*|\\1|p\''
+    }
+    parameters {
+        string(name: 'Comment', defaultValue: '', description: 'Comment to identify tag' )
+    }
+    tools {
+        maven 'M3' //defines maven tool (configured in "Global Configuration Tool -> Maven -> Maven Installations")
+    } 
+    stages{
+   
+        stage('Build and Test') {
+            steps {
+                echo "Starting Build and Test..."
+                sh "mvn -Dmaven.test.failure.ignore clean verify"
+                echo "Build and Test: ${currentBuild.currentResult}"
+            }
+            post {
+                success {
+                    echo "...Build and Test Succeeded for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Build and Test Failed for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+        
+        stage('Push Release Tag') {
+            steps {
+                script {
+                    //remove -SNAPSHOT suffix, this is necessary when the code is being mergec from develop branch
+                    releaseVersion = readMavenPom().getVersion()
+                    releaseVersion = releaseVersion.split('-')[0];
+                    //tagPatterns is used to parse the tag names and later increment the number
+                    tagPattern = readMavenPom().getVersion() + "-RC-"
+
+                    // requires the SSH Agent Plugin to be installed in Jenkins - https://plugins.jenkins.io/ssh-agent/
+                    // This is needed because Jenkins will use the private key configured with the job to read the remote repo, 
+                    // but the pipeline script will use the default SSH key found in the user running Jenkins itself
+                    //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { // This needs to have the ID associated with the global credentials in Jenkins
+                        // to avoid conflicts, overwrite everything
+                        sh "git fetch --all"
+                        sh "git tag -l | xargs git tag -d"
+                        sh "git reset --hard origin/release"
+                        sh "git checkout release"
+                        sh "git checkout pom.xml"
+                        sh "git pull"
+
+                    //}
+
+                    try{
+                        //parses the tags and gets the latest element of the list,
+                        //if none exists, executes the catch and creates the first one
+                        buildNum = sh (
+                                    script: "git tag | grep -e '${tagPattern}' | cut -d'-' -f 3",
+                                    returnStdout: true
+                                    ).trim()
+                        buildNum = buildNum[-1] //gets last element of the array                        
+                        buildNum = buildNum.trim().toInteger() + 1
+                        echo "++++++++++++${buildNum}"
+                    } catch (Exception) {
+                        echo "${Exception}"
+                        echo "release candidates do not exist. initiating to 1."
+                        buildNum = 1
+                    }
+                    buildNum = buildNum.toString()
+                    buildNum = buildNum.padLeft(3, "0")
+                    sh "mvn versions:set -DnewVersion=${releaseVersion}-RC-${buildNum}"//sets new version in pom.xml
+                    sh "git add pom.xml"
+                    sh "git commit --all -m \"[Jenkins commit] Application version @ ${releaseVersion}-RC-${buildNum}.\""
+                    //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
+                    sh "git push origin release"//just pushes to release branch
+                    //}
+                    sh "git tag -a ${releaseVersion}-RC-${buildNum} -m \"[Jenkins commit] ${params.Comment}\""
+                    //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
+                        sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
+                    //}
+                    applicationName = readMavenPom().getArtifactId() + '-qa'
+                }
+            }
+            post {
+                success {
+                    echo "...Push Release Branch Succeeded: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Push Release Branch Failed: ${currentBuild.currentResult}"
+                }
+            }
+        }
+
+        
+        stage('Deploy Release Candidate Artifact to Nexus') {
+            steps {
+                script {
+                    echo "Starting Deploy Release Candidate Artifact..."
+                    configFileProvider([configFile(fileId: '0f942a8d-e860-49ec-ba5d-d98cf9cb2b6f', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                        //deploys to -qa directory, specified by the altReleaseDeploymentRepository argument
+                        sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy -DaltReleaseDeploymentRepository=mule-nexus-rc
+                    }
+                    echo "Artifact Deployed: ${currentBuild.currentResult}"
+                }
+            }
+            post {
+                success {
+                    echo "...Deploy Artifact Succeeded for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Deploy Artifact Failed for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+        
+        stage('Deploy to Cloudhub QA environment') {
+            steps {
+                script {
+                    echo "Starting Deploy to Development"
+                    //adds suffix to identify environment, and avoid having duplicate names in Cloudhub
+                    //for the same app in different environments
+                    applicationName = readMavenPom().getArtifactId() + '-qa'
+                    echo "applicationName=${applicationName}"
+                    
+                    //read properties for deployment
+                    props = readProperties(file: 'deploy-qa.properties')
+
+                    anypointMuleVersion = props['anypoint.mule.version']
+                    anypointMuleEnvironment = props['anypoint.mule.environment']
+                    businessGroupId = props['anypoint.mule.businessGroupId']
+                    persistentQueues = props['cloudhub.persistentQueues']
+                    cloudhubEnv = props['anypoint.mule.environment']
+                    cloudhubRegion = props['cloudhub.region']
+                    cloudhubWorkerType = props['cloudhub.workerType']
+                    cloudhubWorkers = props['cloudhub.workers']
+        
+                    echo "anypointMuleVersion=${anypointMuleVersion}"
+                    echo "anypointMuleEnvironment=${anypointMuleEnvironment}"
+                    echo "businessGroupId=${businessGroupId}"
+                    echo "persistentQueues=${persistentQueues}"
+                    echo "cloudhubEnv=${cloudhubEnv}"
+                    echo "cloudhubRegion=${cloudhubRegion}"
+                    echo "cloudhubWorkerType=${cloudhubWorkerType}"
+                    echo "cloudhubWorkers=${cloudhubWorkers}"
+                        
+                    echo "Deploy to Development: ${currentBuild.currentResult}"
+                }
+                
+                configFileProvider([configFile(fileId: '0f942a8d-e860-49ec-ba5d-d98cf9cb2b6f', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                    // Run the maven build
+                    sh """ mvn clean package deploy -DmuleDeploy -U --batch-mode -s $MAVEN_SETTINGS_XML \
+                            -Danypoint.platform.config.analytics.agent.enabled=true \
+                            -Dapp.runtime=${anypointMuleVersion}  \
+                            -DauthToken=${env.ACCESS_TOKEN} \
+                            -Dcloudhub.application.name=${applicationName} \
+                            -Denvironment=${anypointMuleEnvironment} \
+                            -Dbusiness.group.id=${businessGroupId} \
+                            -Dcloudhub.region=${cloudhubRegion} \
+                            -Dcloudhub.workerType=${cloudhubWorkerType} \
+                            -Dcloudhub.persistentQueues=${persistentQueues} \
+                            -Dcloudhub.objectStoreV2=true \
+                            -DattachMuleSources=false \
+                            -Denv=uat \
+                            -Dcloudhub.workers=${cloudhubWorkers} """
+                }
+            }
+            post {
+                success {
+                    echo "...Deploy to Development Succeeded for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Deploy to Development Failed for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+        
+    }
+
+   post {
+       success {
+           echo "All Good: ${env.BUILD_VERSION}"
+       }
+       unsuccessful {
+           echo "Not So Good: ${env.BUILD_VERSION}"
+       }      
+       always {
+           echo "Pipeline result: ${currentBuild.result}"
+           echo "Pipeline currentResult: ${currentBuild.currentResult}"
+           cleanWs()
+       }
+   }
+   
+}
