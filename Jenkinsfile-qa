@@ -89,7 +89,7 @@ pipeline {
                     sh "git commit --all -m \"[Jenkins commit] Application version @ ${releaseVersion}-RC-${buildNum}.\""
                     
                     //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
-                    sh "git push origin release"//just pushes to release branch
+                    sh "git push -u -f origin release"//just pushes to release branch
                     
                     //}
                     
