@@ -74,11 +74,13 @@ pipeline {
                     buildNum = buildNum.toString()
                     buildNum = buildNum.padLeft(3, "0")
                     sh "mvn versions:set -DnewVersion=${releaseVersion}-RC-${buildNum}"//sets new version in pom.xml
-                    //withCredentials([usernamePassword(credentialsId: 'gsmuleacm-git', passwordVariable: 'adminPass', usernameVariable: 'adminUser')]) {
-
+                    withCredentials([usernamePassword(credentialsId: 'gsmuleacm-git', passwordVariable: 'adminPass', usernameVariable: 'adminUser')]) {
+                    sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
+                    sh "git config --local credential.helper store --file=~/.git-credentials"
                     sh "git add pom.xml"
-                    sh "git config --global user.email "gsacm@gmail.com""
-                    sh "git config --global user.name "muleuser-gs""
+                    //sh "git config --global user.email "gsacm@gmail.com""
+                    //sh "git config --global user.name "muleuser-gs""
+
                     sh "git commit --all -m \"[Jenkins commit] Application version @ ${releaseVersion}-RC-${buildNum}.\""
                     
                     //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
@@ -86,14 +88,13 @@ pipeline {
                     
                     //}
                     
-                    sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
-                    sh "git config --local credential.helper store --file=~/.git-credentials"
+
                     sh "git tag -a ${releaseVersion}-RC-${buildNum} -m \"[Jenkins commit] ${params.Comment}\""
                     
                     //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
                        
                      sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
-                    //}
+                    }
                     applicationName = readMavenPom().getArtifactId() + '-qa'
                 }
             }
