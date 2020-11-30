@@ -36,6 +36,9 @@ pipeline {
         stage('Push Release Tag') {
             steps {
                 script {
+                    git branch: 'master',
+                        credentialsId: 'muleuser-gs',
+                        url: 'https://github.com/gscutari/system-db.git'
                     //remove -SNAPSHOT suffix, this is necessary when the code is being mergec from develop branch
                     releaseVersion = readMavenPom().getVersion()
                     releaseVersion = releaseVersion.split('-')[0];
