@@ -10,5 +10,4 @@ http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/m
 	<tls:context name="TLS_Context" doc:name="TLS Context" doc:id="363e689a-b174-4b7d-b48e-a6151ca30820" >
 		<tls:key-store type="${system.db.https.listener.key.store.type}" path="${system.db.https.listener.key.store.path}" keyPassword="${system.db.https.listener.key.store.key.password}" password="${system.db.https.listener.key.store.password}" />
 	</tls:context>
-	<api-gateway:autodiscovery apiId="${anypoint.platform.autodiscovery}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="2f84107b-6c7c-4876-9d75-07ef6472476f" flowRef="system-db-api-main" />
 </mule>
