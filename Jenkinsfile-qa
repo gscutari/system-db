@@ -79,10 +79,13 @@ pipeline {
                     //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
                     sh "git push origin release"//just pushes to release branch
                     //}
+                    withCredentials([usernamePassword(credentialsId: 'gsmuleacm-git', passwordVariable: 'adminPass', usernameVariable: 'adminUser')]) {
+                    sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
+                    sh "git config --local credential.helper store --file=~/.git-credentials"
                     sh "git tag -a ${releaseVersion}-RC-${buildNum} -m \"[Jenkins commit] ${params.Comment}\""
                     //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
                         sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
-                    //}
+                    }
                     applicationName = readMavenPom().getArtifactId() + '-qa'
                 }
             }
