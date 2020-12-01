@@ -119,7 +119,7 @@ pipeline {
             steps {
                 script {
                     echo "Starting Deploy Release Candidate Artifact..."
-                    configFileProvider([configFile(fileId: '0f942a8d-e860-49ec-ba5d-d98cf9cb2b6f', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                    configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
                         //deploys to -qa directory, specified by the altReleaseDeploymentRepository argument
                         sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy -DaltReleaseDeploymentRepository=mule-nexus-rc'
                     }
@@ -169,7 +169,7 @@ pipeline {
                     echo "Deploy to Development: ${currentBuild.currentResult}"
                 }
                 
-                configFileProvider([configFile(fileId: '0f942a8d-e860-49ec-ba5d-d98cf9cb2b6f', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
                     // Run the maven build
                     sh """ mvn clean package deploy -DmuleDeploy -U --batch-mode -s $MAVEN_SETTINGS_XML \
                             -Danypoint.platform.config.analytics.agent.enabled=true \
