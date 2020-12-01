@@ -46,7 +46,7 @@ pipeline {
                     // requires the SSH Agent Plugin to be installed in Jenkins - https://plugins.jenkins.io/ssh-agent/
                     // This is needed because Jenkins will use the private key configured with the job to read the remote repo, 
                     // but the pipeline script will use the default SSH key found in the user running Jenkins itself
-                    sshagent(['mysshkey']) { // This needs to have the ID associated with the global credentials in Jenkins
+                    sshagent(['gitsshkeys']) { // This needs to have the ID associated with the global credentials in Jenkins
                         // to avoid conflicts, overwrite everything
                         sh "git fetch --all"
                         sh "git tag -l | xargs git tag -d"
@@ -89,18 +89,18 @@ pipeline {
 
                     sh "git commit --all -m \"[Jenkins commit] Application version @ ${releaseVersion}-RC-${buildNum}.\""
                     
-                    //sshagent(['mysshkey']) { 
+                    sshagent(['gitsshkeys']) { 
                     sh "git push -u -f origin release"//just pushes to release branch
                     
-                    //}
+                    }
                     
 
                     sh "git tag -a ${releaseVersion}-RC-${buildNum} -m \"[Jenkins commit] ${params.Comment}\""
                     
-                    //sshagent(['mysshkey']) { 
+                    sshagent(['gitsshkeys']) { 
                        
                      sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
-                    //}
+                    }
                     applicationName = readMavenPom().getArtifactId() + '-qa'
                 }
             }
