@@ -27,7 +27,7 @@ pipeline {
 
                     echo "Checking out version ${params.Version}..."
                     sshagent(['gitsshkeys']) { 
-                        sh "git fetch --tags --force --progress --prune -- origin +refs/heads/feature:refs/remotes/origin/feature"
+                        sh "git fetch --tags --force --progress --prune -- origin release"
                         sh "git checkout '${params.Version}'"
                     }
                 }
