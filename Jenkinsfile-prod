@@ -99,7 +99,8 @@ pipeline {
                         
                         sshagent(['gitsshkeys']) { 
                             sh "git push origin ${releaseVersion} -f"
-                            sh "git checkout master"
+                            //change main to master. Github uses main
+                            sh "git checkout main" 
                             sh "git merge release"
                             sh "git push"
                         }

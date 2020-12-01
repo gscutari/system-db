@@ -46,7 +46,7 @@ pipeline {
                     // requires the SSH Agent Plugin to be installed in Jenkins - https://plugins.jenkins.io/ssh-agent/
                     // This is needed because Jenkins will use the private key configured with the job to read the remote repo, 
                     // but the pipeline script will use the default SSH key found in the user running Jenkins itself
-                    sshagent(['gitsshcredentials']) { // This needs to have the ID associated with the global credentials in Jenkins
+                    sshagent(['gitsshkeys']) { // This needs to have the ID associated with the global credentials in Jenkins
                         // to avoid conflicts, overwrite everything
                         sh "git fetch --all"
                         sh "git tag -l | xargs git tag -d"
@@ -89,7 +89,7 @@ pipeline {
 
                     sh "git commit --all -m \"[Jenkins commit] Application version @ ${releaseVersion}-RC-${buildNum}.\""
                     
-                    sshagent(['gitsshcredentials']) { 
+                    sshagent(['gitsshkeys']) { 
                     sh "git push -u -f origin release"//just pushes to release branch
                     
                     }
@@ -97,7 +97,7 @@ pipeline {
 
                     sh "git tag -a ${releaseVersion}-RC-${buildNum} -m \"[Jenkins commit] ${params.Comment}\""
                     
-                    sshagent(['gitsshcredentials']) { 
+                    sshagent(['gitsshkeys']) { 
                        
                      sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
                     }
@@ -119,9 +119,9 @@ pipeline {
             steps {
                 script {
                     echo "Starting Deploy Release Candidate Artifact..."
-                    configFileProvider([configFile(fileId: '0f942a8d-e860-49ec-ba5d-d98cf9cb2b6f', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                    configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
                         //deploys to -qa directory, specified by the altReleaseDeploymentRepository argument
-                        sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy -DaltReleaseDeploymentRepository=mule-nexus-rc'
+                        sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy -D-DrepositoryId=mule-nexus-rc'
                     }
                     echo "Artifact Deployed: ${currentBuild.currentResult}"
                 }
@@ -169,7 +169,7 @@ pipeline {
                     echo "Deploy to Development: ${currentBuild.currentResult}"
                 }
                 
-                configFileProvider([configFile(fileId: '0f942a8d-e860-49ec-ba5d-d98cf9cb2b6f', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
                     // Run the maven build
                     sh """ mvn clean package deploy -DmuleDeploy -U --batch-mode -s $MAVEN_SETTINGS_XML \
                             -Danypoint.platform.config.analytics.agent.enabled=true \
