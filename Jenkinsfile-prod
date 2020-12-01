@@ -1,0 +1,212 @@
+pipeline {
+  
+    agent any
+    environment {
+        //gets access token from Anypoint Platform (to deploy the app to Cloudhub)
+        ACCESS_TOKEN = sh label: 'get_token', returnStdout: true, script: 'curl --location --request POST \'https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token\' --header \'Content-Type: application/json\' --data-raw \'{"client_id" : "7b647938523d48c4b0d0c53ce740fba0", "client_secret" : "977A151534FF4C83b1014dec4CFc0c2B", "grant_type" : "client_credentials"}\' | sed -n \'s|.*"access_token":"\\([^"]*\\)".*|\\1|p\''
+    }
+
+  parameters {
+    string(name: 'Version', defaultValue: 'X.X.X-RC-XXX', description: 'Release Version in Nexus and Github, e.g.: 1.0.2-RC-002' )
+  }
+
+    tools {
+        maven 'M3'
+    }
+
+    stages {
+        stage('Checkout Version') {
+            steps {
+                script {
+                    isReleaseCandidate = "${params.Version}".contains('-RC-')
+                    
+
+                    if(!(isReleaseCandidate)){
+                        throw new Exception("Version does not correspond to release candidate")
+                    }
+
+                    echo "Checking out version ${params.Version}..."
+                    sshagent(['gitsshkeys']) { 
+                        sh "git fetch --tags --force --progress --prune -- origin +refs/heads/feature:refs/remotes/origin/feature"
+                        sh "git checkout '${params.Version}'"
+                    }
+                }
+            }
+            post {
+                success {
+                    echo "...Version ${params.Version} Checkout Succeeded for ${params.Version}: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Version ${params.Version} Checkout Failed for ${params.Version}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+    
+        stage('Copy Release from Nexus Artifact Management Repository') {
+            steps {
+                script {
+                    echo "Copying the ${params.Version} artifact from the artifact repository..."
+
+                    pom = readMavenPom()
+                    echo "POM groupId: ${pom.groupId}"
+                    echo "POM artifactId: ${pom.artifactId}"
+                    echo "Release: ${params.Version}"
+                    echo "Current Build Number: ${currentBuild.number}"
+                    
+                    configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                        sh """mkdir -p tmp""" //creates folder to store copied jar from Artifactory
+                        sh """mvn -s $MAVEN_SETTINGS_XML org.apache.maven.plugins:maven-dependency-plugin:3.1.1:copy -Dartifact=${pom.groupId}:${pom.artifactId}:${params.Version}:jar:mule-application -DoutputDirectory=tmp/"""
+                    }
+                }
+            }
+            post {
+                success {
+                    echo "...Artifact Version ${params.Version} Checkout Succeeded: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Artifact Version ${params.Version} Checkout Failed: ${currentBuild.currentResult}"
+                }
+            }
+        }
+
+        stage('Push Release Tag') {
+            steps {
+                script {
+
+                    if (isReleaseCandidate) {
+                        
+
+                        releaseVersion = readMavenPom().getVersion()
+                        releaseVersion = sh (
+                                            script: "echo '${releaseVersion}' | cut -d'-' -f 1",
+                                            returnStdout: true
+                                            ).trim()
+                        echo "++++++++++++releaseVersion: ${releaseVersion}"
+                        sh "git checkout release"
+                        sh "mvn versions:set -DnewVersion=${releaseVersion}"
+                        sh "git add pom.xml"
+                        sh "git commit --all -m \"[Jenkins commit] Application version @ ${releaseVersion}.\""
+                        sshagent(['gitsshkeys']) { 
+                            sh "git push origin release"//just pushes to release branch
+                        }
+                        try {
+                            sh "git tag -a ${releaseVersion} -m \"[Jenkins commit] ${params.Comment}\""
+                        }
+                        catch(Exception) {
+                            echo "tag already exists"
+                        }
+                        
+                        
+                        sshagent(['gitsshkeys']) { 
+                            sh "git push origin ${releaseVersion} -f"
+                            sh "git checkout master"
+                            sh "git merge release"
+                            sh "git push"
+                        }
+                       
+                    } 
+                   
+                }
+            }
+            post {
+                success {
+                    echo "...Push Release Branch Succeeded for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Push Release Branch Failed for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+
+        stage('Deploy Artifact') {
+            steps {
+                script {
+                    if (isReleaseCandidate) {
+                        echo "Starting Deploy Artifact..."
+                        configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                            sh 'mvn -U --batch-mode -s $MAVEN_SETTINGS_XML clean package install deploy'
+                        }
+                        echo "Artifact Deployed: ${currentBuild.currentResult}"
+                    }
+                }
+            }
+            post {
+                success {
+                    echo "...Deploy Artifact Succeeded for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Deploy Artifact Failed for ${env.BUILD_VERSION}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+        
+        stage('Deploy to Environment') {
+            steps {
+                script {
+                    echo "Starting Deploy to Environment..."
+                            
+                    applicationName = readMavenPom().getArtifactId()
+                    echo "applicationName=${applicationName}"
+
+                     props = readProperties(file: 'deploy-prod.properties')
+
+                    anypointMuleVersion = props['anypoint.mule.version']
+                    anypointMuleEnvironment = props['anypoint.mule.environment']
+                    businessGroupId = props['anypoint.mule.businessGroupId']
+                    persistentQueues = props['cloudhub.persistentQueues']
+                    cloudhubEnv = props['anypoint.mule.environment']
+                    cloudhubRegion = props['cloudhub.region']
+                    cloudhubWorkerType = props['cloudhub.workerType']
+                    cloudhubWorkers = props['cloudhub.workers']
+        
+                    echo "anypointMuleVersion=${anypointMuleVersion}"
+                    echo "anypointMuleEnvironment=${anypointMuleEnvironment}"
+                    echo "businessGroupId=${businessGroupId}"
+                    echo "persistentQueues=${persistentQueues}"
+                    echo "cloudhubEnv=${cloudhubEnv}"
+                    echo "cloudhubRegion=${cloudhubRegion}"
+                    echo "cloudhubWorkerType=${cloudhubWorkerType}"
+                    echo "cloudhubWorkers=${cloudhubWorkers}"
+                        
+                    echo "Deploy to Development: ${currentBuild.currentResult}"
+                }
+                    
+                configFileProvider([configFile(fileId: 'f390501c-7b4a-466f-b563-055e0da4a47e', targetLocation: 'settings.xml', variable: 'MAVEN_SETTINGS_XML')]) {
+                      sh """ mvn clean package deploy -DmuleDeploy -U --batch-mode -s $MAVEN_SETTINGS_XML \
+                        -Danypoint.platform.config.analytics.agent.enabled=true \
+                        -Dapp.runtime=${anypointMuleVersion}  \
+                        -DauthToken=${env.ACCESS_TOKEN} \
+                        -Dcloudhub.application.name=${applicationName} \
+                        -Denvironment=${anypointMuleEnvironment} \
+                        -Dbusiness.group.id=${businessGroupId} \
+                        -Dcloudhub.region=${cloudhubRegion} \
+                        -Dcloudhub.workerType=${cloudhubWorkerType} \
+                        -Dcloudhub.persistentQueues=${persistentQueues} \
+                        -Dcloudhub.objectStoreV2=true \
+                        -Dcloudhub.workers=${cloudhubWorkers} """
+                }
+            }
+            post {
+                success {
+                    echo "...Deploy to Development Succeeded for ${params.Version}: ${currentBuild.currentResult}"
+                } 
+                unsuccessful {
+                    echo "...Deploy to Development Failed for ${params.Version}: ${currentBuild.currentResult}"
+                }
+            }
+        }
+    }   
+    post {
+       success {
+           echo "All Good: ${env.BUILD_VERSION}"
+       }
+       unsuccessful {
+           echo "Not So Good: ${env.BUILD_VERSION}"
+       }      
+       always {
+           echo "Pipeline result: ${currentBuild.result}"
+           echo "Pipeline currentResult: ${currentBuild.currentResult}"
+           cleanWs()
+       }
+   }
+}
