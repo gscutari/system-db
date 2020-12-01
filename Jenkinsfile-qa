@@ -36,6 +36,7 @@ pipeline {
         stage('Push Release Tag') {
             steps {
                 script {
+                  
                     //remove -SNAPSHOT suffix, this is necessary when the code is being mergec from develop branch
                     releaseVersion = readMavenPom().getVersion()
                     releaseVersion = releaseVersion.split('-')[0];
@@ -45,7 +46,7 @@ pipeline {
                     // requires the SSH Agent Plugin to be installed in Jenkins - https://plugins.jenkins.io/ssh-agent/
                     // This is needed because Jenkins will use the private key configured with the job to read the remote repo, 
                     // but the pipeline script will use the default SSH key found in the user running Jenkins itself
-                    //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { // This needs to have the ID associated with the global credentials in Jenkins
+                    sshagent(['gitsshcredentials']) { // This needs to have the ID associated with the global credentials in Jenkins
                         // to avoid conflicts, overwrite everything
                         sh "git fetch --all"
                         sh "git tag -l | xargs git tag -d"
@@ -54,8 +55,7 @@ pipeline {
                         sh "git checkout pom.xml"
                         sh "git pull"
 
-                    //}
-
+                    }
                     try{
                         //parses the tags and gets the latest element of the list,
                         //if none exists, executes the catch and creates the first one
@@ -73,16 +73,34 @@ pipeline {
                     }
                     buildNum = buildNum.toString()
                     buildNum = buildNum.padLeft(3, "0")
+                    
                     sh "mvn versions:set -DnewVersion=${releaseVersion}-RC-${buildNum}"//sets new version in pom.xml
+                    
+                    //withCredentials([usernamePassword(credentialsId: 'gsmuleacm-git', passwordVariable: 'adminPass', usernameVariable: 'adminUser')]) {
+                    //sh "echo https://$adminUser:$adminPass@github**** > ~/.git-credentials"
+                    //sh "git config --local credential.helper store --file=~/.git-credentials"
+                    
+                    //sh "git config --global user.email \"gsmuleacm@gmail.com\""
+                    //sh "git config --global user.name \"muleuser-gs\""
+                    
+                    
                     sh "git add pom.xml"
+                   
+
                     sh "git commit --all -m \"[Jenkins commit] Application version @ ${releaseVersion}-RC-${buildNum}.\""
-                    //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
-                    sh "git push origin release"//just pushes to release branch
-                    //}
+                    
+                    sshagent(['gitsshcredentials']) { 
+                    sh "git push -u -f origin release"//just pushes to release branch
+                    
+                    }
+                    
+
                     sh "git tag -a ${releaseVersion}-RC-${buildNum} -m \"[Jenkins commit] ${params.Comment}\""
-                    //sshagent(['cb159b56-4b2f-4766-a630-43d45300a3b7']) { 
-                        sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
-                    //}
+                    
+                    sshagent(['gitsshcredentials']) { 
+                       
+                     sh "git push origin ${releaseVersion}-RC-${buildNum} -f"
+                    }
                     applicationName = readMavenPom().getArtifactId() + '-qa'
                 }
             }
